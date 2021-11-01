@@ -1,0 +1,26 @@
+---
+- hosts: backend
+  vars:
+    backend_user: backend
+    backend_folder: /backend
+  tasks:
+    - name: include nodejs role
+      include_role:
+        name: nodejs
+    - name: Include the backend role
+      include_role:
+        name: backend
+- hosts: frontend
+  tasks:
+    - name: include nodejs role
+      include_role:
+        name: nodejs
+    - name: include the nodejs role
+      include_role:
+        name: frontend
+- hosts: database
+  tasks:
+    - name: include the database role
+      include_role:
+        name: database
+
