@@ -1,0 +1,56 @@
+---
+- name: Create User
+  become: true 
+  user:
+    name: "{{ backend_user}}"
+- name: Create a directory if it doesn't exist
+  become: true
+  ansible.builtin.file:
+    path: "{{ backend_folder}}"
+    state: directory
+    owner: "{{ backend_user }}"
+    mode: '0755'
+- name: acl package installation
+  become: true
+  package:
+    name: acl
+    state: present
+- name: Clone git repo
+  become: true
+  become_user: "{{ backend_user }}"
+  git:
+    repo: https://github.com/bezkoder/nodejs-express-sequelize-mysql.git
+    force: yes
+    dest: /home{{ backend_folder }}/backend
+- name: Install pacakages for the backend app
+  become: true
+  become_user: "{{ backend_user }}"
+  community.general.npm:
+    path: /home{{ backend_folder }}/backend
+
+- name: Update DB configuration
+  become: true
+  template:
+    src: db.config.js.j2
+    dest: /home{{ backend_folder }}/backend/app/config/db.config.js
+- name: tutorials service file
+  become: true
+  template:
+    src: tutorials.service.j2
+    dest: /etc/systemd/system/tutorials.service
+- name: restart service
+  become: true
+  systemd:
+    daemon_reload: yes
+    name: tutorials
+    state: started
+    enabled: yes
+- name: restart service
+  become: true
+  systemd:
+    name: tutorials
+    state: restarted
+
+
+
+

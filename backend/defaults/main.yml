@@ -1,0 +1,6 @@
+---
+# defaults file for backend
+backend_db_host: 192.168.150.12
+backend_db_name: tutorials
+backend_db_user: backend
+backend_db_password: acit4640

@@ -1,0 +1,61 @@
+---
+- name: run apt-get update
+  become: true
+  apt:
+    upgrade: yes
+    update_cache: yes
+- name: install MySQL
+  become: true
+  package:
+    name: mysql-server
+    state: present
+- name: Install pymysql
+  become: true
+  pip:
+    name: pymysql
+    state: present
+- name: Install python3-pip
+  become: true
+  package:
+    name: python3-pip
+    state: present
+- name: Install python3-mysqldb
+  become: true
+  apt:
+    name: python3-mysqldb
+    state: present
+- name: Run pymysql and create database
+  become: true
+  mysql_db:
+    name: "{{ backend_db_name }}"
+    state: present
+    check_implicit_admin: yes
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+- name: CREATE USER backend 
+  become: true
+  mysql_user:
+    name: "{{ backend_db_user}}"
+    password: "{{ backend_db_password }}"
+    priv: "{{ backend_db_name }}.*:ALL"
+    state: present
+    check_implicit_admin: yes
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+- name: change mysqld.cnf bind-address
+  become: true
+  replace:
+    path: /etc/mysql/mysql.conf.d/mysqld.cnf
+    regexp: '127.0.0.1'
+    replace: '0.0.0.0'
+  register: mysqld_cnf
+- name: Enable MySQL and Run
+  become: true
+  systemd:
+    name: mysql
+    enabled: yes
+    state: started
+- name: restart MySQL service
+  become: true
+  systemd:
+    name: mysql
+    state: restarted
+  when: mysqld_cnf.changed

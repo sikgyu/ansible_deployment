@@ -1,0 +1,48 @@
+---
+- name: run apt-get update
+  become: true
+  apt:
+    upgrade: yes
+    update_cache: yes
+- name: Install nginx
+  become: true
+  package:
+    name: nginx
+    state: present
+- name: Git Clone
+  git:
+    repo: https://github.com/bezkoder/react-crud-web-api.git
+    force: yes
+    dest: /home/vagrant{{ http_static_dir }}
+- name: Install packages
+  npm:
+    path: /home/vagrant{{ http_static_dir }}
+    state: latest
+- name: Run npm run-script build
+  shell:
+    cmd: npm run-script build
+    chdir: /home/vagrant{{ http_static_dir }}
+- name: http-common.js modification
+  replace:
+    path: /home/vagrant/{{http_static_dir}}/src/http-common.js
+    regexp: 'baseURL: "http://localhost:8080/api"'
+    replace: 'baseURL: "{{ http_api_location}}"'
+- name: nginx default file modification
+  become: true
+  template:
+    force: yes
+    src: default.j2
+    dest: /etc/nginx/sites-available/default
+  register: default
+- name: enable nginx and run
+  become: true
+  systemd:
+    name: nginx
+    enabled: yes
+    state: started
+- name: restart nginx
+  become: true
+  systemd:
+    name: nginx
+    state: restarted
+  when: default.changed
